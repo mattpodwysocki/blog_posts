@@ -33,8 +33,9 @@ Without location awareness, these agents can only offer generic advice. With Map
 Before we dive in, you'll need:
 
 1. **Python 3.10+** installed
-2. **A Mapbox account** (free tier works great) - [Sign up here](https://account.mapbox.com/auth/signup/)
-3. **Your Mapbox access token** - Find it in your [Mapbox account dashboard](https://account.mapbox.com/access-tokens/)
+2. **Node.js 20.6+** (for running the MCP server via npx)
+3. **A Mapbox account** (free tier works great) - [Sign up here](https://account.mapbox.com/auth/signup/)
+4. **Your Mapbox access token** - Find it in your [Mapbox account dashboard](https://account.mapbox.com/access-tokens/)
 
 ## Setting Up Mapbox MCP
 
@@ -44,14 +45,20 @@ You have two options for using the Mapbox MCP server: running it locally or conn
 
 Run the MCP server as a local process on your machine. This is what we'll use throughout this post.
 
-First, install the tooling to run the server:
+The Mapbox MCP server is published as an npm package, so you can run it directly with `npx` (no installation needed):
 
 ```bash
-# Install uv if you haven't already (for uvx command)
-pip install uv
+# Node.js/npm approach (recommended)
+# The -y flag auto-accepts the package installation
+npx -y @mapbox/mcp-server
+```
 
-# OR use npx if you prefer (comes with Node.js)
-# The Mapbox MCP server will be installed automatically when you run it
+Alternatively, if you prefer Python tooling, you can use `uvx`:
+
+```bash
+# Python/uv approach
+pip install uv
+uvx mapbox-mcp
 ```
 
 The Mapbox MCP server needs your access token. Set it as an environment variable:
@@ -63,11 +70,11 @@ export MAPBOX_ACCESS_TOKEN="your_access_token_here"
 To verify the server works, you can test it with the MCP Inspector:
 
 ```bash
-# Using uvx (Python/uv)
-npx @modelcontextprotocol/inspector uvx mapbox-mcp
+# Using the published npm package (recommended)
+npx @modelcontextprotocol/inspector npx -y @mapbox/mcp-server
 
-# OR using npx (Node.js)
-npx @modelcontextprotocol/inspector npx @mapbox/mcp-server-mapbox
+# OR using uvx (if you installed mapbox-mcp via pip)
+npx @modelcontextprotocol/inspector uvx mapbox-mcp
 ```
 
 This will open a web interface where you can explore the available tools and test them interactively.
@@ -84,23 +91,26 @@ This will open a web interface where you can explore the available tools and tes
 
 ### Option 2: Hosted MCP Server
 
-Mapbox provides a hosted MCP endpoint for quick access without local setup. To use it, you'll need to configure your MCP client to connect to:
+Mapbox provides a hosted MCP endpoint for quick access without local setup:
 
 **Endpoint:** `https://mcp.mapbox.com/mcp`
 
-The setup depends on your MCP client. For CrewAI's MCPTool, you would typically configure it with the server endpoint rather than a command:
+The hosted server uses **OAuth authentication**. When you connect for the first time, a browser window will open asking you to log in to your Mapbox account and authorize access. This provides secure, token-based authentication without needing to manage access tokens manually.
+
+For CrewAI with programmatic access (using an access token), you can use `MCPServerHTTP`:
 
 ```python
-# Note: Check CrewAI's documentation for the exact parameter name
-# This is a conceptual example of how hosted connection might work
-geocode_tool = MCPTool(
-    name="mapbox_geocode",
-    server_url="https://mcp.mapbox.com/mcp",
-    description="Convert an address or place name into geographic coordinates"
+from crewai.mcp import MCPServerHTTP
+
+mapbox_mcp = MCPServerHTTP(
+    url="https://mcp.mapbox.com/mcp",
+    headers={"Authorization": f"Bearer {os.environ['MAPBOX_ACCESS_TOKEN']}"},
 )
 ```
 
-You'll still need to provide your Mapbox access token - check the [Hosted MCP Server Guide](https://github.com/mapbox/mcp-server) for specific configuration instructions for your client.
+**Note:** The hosted server supports both OAuth (for interactive clients) and Bearer token authentication (for programmatic access). For interactive tools like Claude Desktop, the OAuth flow provides a better user experience.
+
+Then use it the same way in your agents with the `mcps` field. Check the [Hosted MCP Server Guide](https://github.com/mapbox/mcp-server/blob/main/docs/hosted-mcp-guide.md) for detailed setup instructions for different clients.
 
 **Pros of hosted:**
 - No local setup or dependency installation required
@@ -123,12 +133,13 @@ The Mapbox MCP server exposes several tools your agent can use:
 
 | Tool | Purpose | Example Use |
 |------|---------|-------------|
-| `mapbox_geocode` | Convert address to coordinates | "Find lat/lon for '1600 Amphitheatre Parkway, Mountain View, CA'" |
-| `mapbox_reverse_geocode` | Convert coordinates to address | "What's the address at 37.4220, -122.0841?" |
-| `mapbox_directions` | Get route between points | "Driving directions from SF to LA" |
-| `mapbox_distance_matrix` | Calculate travel times for multiple locations | "Travel times between 5 warehouses and 10 delivery addresses" |
-| `mapbox_isochrone` | Calculate reachable area | "Show everywhere I can drive to in 30 minutes" |
-| `mapbox_static_map` | Generate map image | "Create a map showing this route" |
+| `search_and_geocode_tool` | Convert address/place to coordinates | "Find lat/lon for '1600 Amphitheatre Parkway, Mountain View, CA'" |
+| `reverse_geocoding_tool` | Convert coordinates to address | "What's the address at 37.4220, -122.0841?" |
+| `directions_tool` | Get route between points | "Driving directions from SF to LA" |
+| `matrix_tool` | Calculate travel times for multiple locations | "Travel times between 5 warehouses and 10 delivery addresses" |
+| `isochrone_tool` | Calculate reachable area | "Show everywhere I can drive to in 30 minutes" |
+| `static_image_tool` | Generate map image | "Create a map showing this route" |
+| `category_search_tool` | Search for POI categories | "Find all museums near downtown" |
 
 These tools return structured data that your agent can interpret and use for reasoning.
 
@@ -165,8 +176,8 @@ os.environ["MAPBOX_ACCESS_TOKEN"] = "your_token_here"
 # Configure the Mapbox MCP server
 # This tells CrewAI how to start the MCP server as a subprocess
 mapbox_mcp = MCPServerStdio(
-    command="uvx",
-    args=["mapbox-mcp"],
+    command="npx",
+    args=["-y", "@mapbox/mcp-server"],
     env={"MAPBOX_ACCESS_TOKEN": os.environ["MAPBOX_ACCESS_TOKEN"]},
 )
 ```
@@ -188,7 +199,7 @@ location_agent = Agent(
     backstory="""You are an expert in geography and location services.
     You can find the precise coordinates for any address, landmark, or place name.
     You always verify locations and provide accurate latitude/longitude data.
-    Use the mapbox_geocode tool to convert addresses to coordinates.""",
+    Use the search_and_geocode_tool to convert addresses to coordinates.""",
     mcps=[mapbox_mcp],
     verbose=True
 )
@@ -200,7 +211,7 @@ route_agent = Agent(
     backstory="""You are a route optimization specialist.
     You calculate the best routes between locations, considering travel time,
     distance, and transportation mode. You provide clear directions and realistic time estimates.
-    Use mapbox_directions to calculate routes between locations.""",
+    Use directions_tool to calculate routes between locations.""",
     mcps=[mapbox_mcp],
     verbose=True
 )
@@ -267,33 +278,21 @@ print(result)
 
 ### Complete Example
 
-Here's the full working code you can run:
+Here's the full working code you can run (also available in the `crewai/` folder):
 
 ```python
 from crewai import Agent, Task, Crew
-from crewai.tools import MCPTool
+from crewai.mcp import MCPServerStdio
 import os
 
 # Set your Mapbox access token
 os.environ["MAPBOX_ACCESS_TOKEN"] = "your_token_here"
 
-# Create MCP tools
-geocode_tool = MCPTool(
-    name="mapbox_geocode",
-    server_command="uvx mapbox-mcp",
-    description="Convert an address or place name into geographic coordinates"
-)
-
-directions_tool = MCPTool(
-    name="mapbox_directions",
-    server_command="uvx mapbox-mcp",
-    description="Calculate routes between locations with turn-by-turn directions"
-)
-
-distance_matrix_tool = MCPTool(
-    name="mapbox_distance_matrix",
-    server_command="uvx mapbox-mcp",
-    description="Calculate travel times and distances between multiple points"
+# Configure the Mapbox MCP server
+mapbox_mcp = MCPServerStdio(
+    command="npx",
+    args=["-y", "@mapbox/mcp-server"],
+    env={"MAPBOX_ACCESS_TOKEN": os.environ["MAPBOX_ACCESS_TOKEN"]},
 )
 
 # Create agents
@@ -301,8 +300,9 @@ location_agent = Agent(
     role="Location Specialist",
     goal="Accurately geocode addresses and identify geographic coordinates",
     backstory="""You are an expert in geography and location services.
-    You can find precise coordinates for any address, landmark, or place name.""",
-    tools=[geocode_tool],
+    You can find precise coordinates for any address, landmark, or place name.
+    Use the search_and_geocode_tool to convert addresses to coordinates.""",
+    mcps=[mapbox_mcp],
     verbose=True
 )
 
@@ -310,8 +310,9 @@ route_agent = Agent(
     role="Route Planner",
     goal="Calculate efficient routes and provide accurate travel time estimates",
     backstory="""You are a route optimization specialist.
-    You calculate the best routes between locations considering travel time and distance.""",
-    tools=[directions_tool, distance_matrix_tool],
+    You calculate the best routes between locations considering travel time and distance.
+    Use directions_tool to calculate routes.""",
+    mcps=[mapbox_mcp],
     verbose=True
 )
 
@@ -373,7 +374,9 @@ One of the most powerful aspects of using MCP is that your agents can interpret 
 
 ### Example Prompts That Work Great
 
-Here are real-world prompts you can use with your location-aware agents, along with what happens behind the scenes:
+Here are real-world prompts you can use with your location-aware agents, along with what happens behind the scenes.
+
+**Location Discovery:**
 
 **1. Vague Address Queries**
 ```
@@ -572,28 +575,26 @@ Let agents choose which Mapbox tool to use based on the query:
 explorer_agent = Agent(
     role="Location Explorer",
     goal="Answer any location-based questions using appropriate tools",
-    backstory="You are a versatile location intelligence expert who selects the right tool for each query",
-    tools=[geocode_tool, directions_tool, distance_matrix_tool],
+    backstory="""You are a versatile location intelligence expert who selects the right tool for each query.
+    You have access to geocoding, directions, distance matrix, and isochrone tools.""",
+    mcps=[mapbox_mcp],
     verbose=True
 )
 ```
+
+The agent will automatically use whichever Mapbox tool (geocode, directions, distance_matrix, isochrone, etc.) is most appropriate for the task.
 
 ### 3. Isochrone Analysis for Service Areas
 
 The isochrone tool is particularly powerful for understanding reachability:
 
 ```python
-isochrone_tool = MCPTool(
-    name="mapbox_isochrone",
-    server_command="uvx mapbox-mcp",
-    description="Calculate areas reachable within a time or distance threshold"
-)
-
 service_agent = Agent(
     role="Service Area Analyst",
     goal="Determine which areas can be served based on travel time constraints",
-    backstory="You analyze geographic coverage and accessibility for service planning",
-    tools=[geocode_tool, isochrone_tool],
+    backstory="""You analyze geographic coverage and accessibility for service planning.
+    Use isochrone_tool to calculate reachable areas and search_and_geocode_tool to find locations.""",
+    mcps=[mapbox_mcp],
     verbose=True
 )
 
@@ -620,17 +621,12 @@ Use cases:
 Create shareable map visualizations:
 
 ```python
-static_map_tool = MCPTool(
-    name="mapbox_static_map",
-    server_command="uvx mapbox-mcp",
-    description="Generate static map images with markers and routes"
-)
-
 map_agent = Agent(
     role="Map Visualizer",
     goal="Create clear visual representations of locations and routes",
-    backstory="You generate map images that make geographic data easy to understand",
-    tools=[static_map_tool],
+    backstory="""You generate map images that make geographic data easy to understand.
+    Use static_image_tool to create visual map outputs.""",
+    mcps=[mapbox_mcp],
     verbose=True
 )
 

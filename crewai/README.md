@@ -13,7 +13,8 @@ Together, they plan a day trip visiting four San Francisco attractions, determin
 ## Prerequisites
 
 - **Python 3.10+**
-- **uv** (Python package manager)
+- **Node.js 20.6+** (for running the MCP server via npx)
+- **uv** (Python package manager - recommended)
 - **A Mapbox account** - [Sign up for free](https://account.mapbox.com/auth/signup/)
 - **LLM API Key** - CrewAI requires an LLM. Options include:
   - OpenAI API key (default)

@@ -25,8 +25,8 @@ print("🗺️  Setting up Mapbox MCP server configuration...")
 # Configure the Mapbox MCP server
 # This will run locally and connect to Mapbox's cloud APIs
 mapbox_mcp = MCPServerStdio(
-    command="uvx",
-    args=["mapbox-mcp"],
+    command="npx",
+    args=["-y", "@mapbox/mcp-server"],
     env={"MAPBOX_ACCESS_TOKEN": os.getenv("MAPBOX_ACCESS_TOKEN")},
 )
 
@@ -41,7 +41,7 @@ location_agent = Agent(
     backstory="""You are an expert in geography and location services.
     You can find the precise coordinates for any address, landmark, or place name.
     You always verify locations and provide accurate latitude/longitude data in decimal degrees format.
-    Use the mapbox_geocode tool to convert addresses to coordinates.""",
+    Use the search_and_geocode_tool to convert addresses to coordinates.""",
     mcps=[mapbox_mcp],
     verbose=True,
 )
@@ -53,7 +53,7 @@ route_agent = Agent(
     You calculate the best routes between locations, considering travel time,
     distance, and transportation mode. You provide clear directions and realistic time estimates.
     You convert times from seconds to minutes and distances from meters to miles or kilometers.
-    Use mapbox_directions and mapbox_distance_matrix tools to calculate routes.""",
+    Use directions_tool and matrix_tool to calculate routes.""",
     mcps=[mapbox_mcp],
     verbose=True,
 )
