@@ -28,6 +28,21 @@ Think about real-world use cases for AI agents:
 
 Without location awareness, these agents can only offer generic advice. With Mapbox MCP, they can provide specific, actionable insights based on real geographic data.
 
+## At a Glance: What You'll Learn
+
+By the end of this tutorial, you'll know how to:
+
+- **Run the Mapbox MCP server** locally via npx or connect to the hosted endpoint at `https://mcp.mapbox.com/mcp`
+- **Integrate MCP with CrewAI** using simple Python configuration—no custom API wrappers needed
+- **Build a multi-agent travel planner** that can:
+  - Geocode addresses and landmarks to precise coordinates
+  - Calculate optimal routes between multiple locations
+  - Estimate travel times and distances
+  - Generate static map visualizations
+- **Leverage natural language processing** where agents automatically discover and chain Mapbox tools based on your task descriptions
+
+We'll build a working example (included in the `crewai/` folder) that you can run and customize for your own projects.
+
 ## Prerequisites
 
 Before we dive in, you'll need:
