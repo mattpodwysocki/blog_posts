@@ -48,7 +48,7 @@ We'll build a working example (included in the `crewai/` folder) that you can ru
 Before we dive in, you'll need:
 
 1. **Python 3.10+** installed
-2. **Node.js 20.6+** (for running the MCP server via npx)
+2. **Node.js LTS+** (for running the MCP server via npx)
 3. **A Mapbox account** (free tier works great) - [Sign up here](https://account.mapbox.com/auth/signup/)
 4. **Your Mapbox access token** - Find it in your [Mapbox account dashboard](https://account.mapbox.com/access-tokens/)
 
