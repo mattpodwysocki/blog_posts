@@ -1,14 +1,14 @@
 # Building Location-Aware Multi-Agent Systems with Mapbox MCP and CrewAI
 
-Modern AI agents can write code, analyze data, and answer complex questions—but most can't tell you how long it takes to drive between two locations, calculate optimal delivery routes, or determine service coverage areas. In our [introduction to the Mapbox MCP Server](./mapbox-mcp-intro.md), we showed how the Model Context Protocol brings location intelligence to AI agents through a standardized interface.
+Modern AI agents can write code, analyze data, and answer complex questions, but most can't tell you how long it takes to drive between two locations, calculate optimal delivery routes, or determine service coverage areas. In our [introduction to the Mapbox MCP Server](./mapbox-mcp-intro.md), we showed how the Model Context Protocol brings location intelligence to AI agents through a standardized interface.
 
-In this tutorial, we'll put that power to work with **CrewAI**, one of the most popular frameworks for building multi-agent systems in Python. CrewAI excels at orchestrating multiple specialized agents that collaborate on complex tasks—perfect for location-based workflows that require geocoding, route planning, and spatial analysis working together.
+In this tutorial, we'll put that power to work with **CrewAI**, one of the most popular frameworks for building multi-agent systems in Python. CrewAI excels at orchestrating multiple specialized agents that collaborate on complex tasks. It's perfect for location-based workflows that require geocoding, route planning, and spatial analysis working together.
 
 ## Why CrewAI for Location-Aware Agents?
 
 CrewAI's architecture is particularly well-suited for geospatial tasks:
 
-**Multi-Agent Collaboration**: Create specialized agents for different aspects of location intelligence—one for geocoding, one for routing, one for analysis. They share context and work together seamlessly.
+**Multi-Agent Collaboration**: Create specialized agents for different aspects of location intelligence (one for geocoding, one for routing, one for analysis). They share context and work together seamlessly.
 
 **Role-Based Specialization**: Define clear roles like "Location Specialist" or "Route Optimizer" with specific goals and expertise, mirroring how location-based businesses actually work.
 
@@ -16,7 +16,7 @@ CrewAI's architecture is particularly well-suited for geospatial tasks:
 
 **Task Dependencies**: Define workflows where route planning waits for geocoding to complete. CrewAI manages the dependency chain automatically.
 
-**Native MCP Support**: As of version 0.80.0, CrewAI has built-in MCP integration through the `mcps` field on agents—no additional adapters needed.
+**Native MCP Support**: As of version 0.80.0, CrewAI has built-in MCP integration through the `mcps` field on agents. No additional adapters needed.
 
 ## At a Glance: What You'll Build
 
@@ -42,22 +42,30 @@ Before we dive in, you'll need:
 2. **Node.js LTS+** (for running the MCP server via npx)
 3. **A Mapbox account** (free tier works great) - [Sign up here](https://account.mapbox.com/auth/signup/)
 4. **Your Mapbox access token** - Find it in your [Mapbox account dashboard](https://account.mapbox.com/access-tokens/)
-5. **An LLM API key** - CrewAI needs an LLM. Options: OpenAI (default), Anthropic, Groq, or others supported by LiteLLM
+5. **An LLM API key** - CrewAI requires an external LLM to power the agents. We'll show setup for:
+   - **OpenAI** (default, easiest) - [Get API key](https://platform.openai.com/api-keys)
+   - **Anthropic** (creators of MCP) - [Get API key](https://console.anthropic.com/)
 
 **Familiarity with:**
 - Basic Python programming
 - CrewAI concepts (agents, tasks, crews) - see [CrewAI docs](https://docs.crewai.com/) for an intro
 - The [Mapbox MCP Server basics](./mapbox-mcp-intro.md) (recommended but not required)
 
-## Quick MCP Setup
+## Quick Setup
 
-If you haven't already, set up your Mapbox access token:
+Set up your environment variables for both Mapbox and your LLM:
 
 ```bash
-export MAPBOX_ACCESS_TOKEN="your_token_here"
+# Mapbox token (required for location services)
+export MAPBOX_ACCESS_TOKEN="your_mapbox_token"
+
+# LLM API key (required for agents)
+export OPENAI_API_KEY="your_openai_key"
+# Or if using Anthropic:
+# export ANTHROPIC_API_KEY="your_anthropic_key"
 ```
 
-The Mapbox MCP Server will run automatically when your agents need it—no manual server management required. We'll use the published npm package via `npx`.
+The Mapbox MCP Server will run automatically when your agents need it. No manual server management required. We'll use the published npm package via `npx`.
 
 For a deep dive into the available tools and setup options, see our [Introduction to Mapbox MCP Server](./mapbox-mcp-intro.md).
 
@@ -69,11 +77,61 @@ Using uv (recommended):
 uv pip install crewai crewai-tools mcp
 ```
 
-Or with pip:
+Or with venv + pip:
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install crewai crewai-tools mcp
 ```
+
+## Configuring the LLM
+
+CrewAI needs an external LLM to power your agents. You have several options:
+
+### Option 1: OpenAI (Default)
+
+The simplest setup uses OpenAI, which CrewAI uses by default:
+
+```bash
+export OPENAI_API_KEY="your_openai_key"
+```
+
+That's it! CrewAI will automatically use OpenAI's models (default: `gpt-4o`). No additional configuration needed in your code.
+
+### Option 2: Anthropic (Creators of MCP)
+
+To use Anthropic's Claude models, install the Anthropic integration and configure your agents:
+
+```bash
+# Install Anthropic support
+uv pip install langchain-anthropic
+
+# Set your API key
+export ANTHROPIC_API_KEY="your_anthropic_key"
+```
+
+Then specify the LLM when creating agents:
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+# Create an Anthropic LLM instance
+llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
+
+# Use it in your agents
+location_agent = Agent(
+    role="Location Specialist",
+    goal="Accurately geocode addresses and identify geographic coordinates",
+    llm=llm,  # Specify Anthropic
+    mcps=[mapbox_mcp],
+    verbose=True
+)
+```
+
+**Other Options:** CrewAI supports any LLM provider compatible with LangChain (Groq, Azure OpenAI, local models via Ollama, etc.). See the [CrewAI LLM documentation](https://docs.crewai.com/concepts/llms) for details.
+
+**For this tutorial, we'll use OpenAI** since it's the default and requires the least configuration.
 
 ## Connecting CrewAI to Mapbox MCP
 
@@ -131,7 +189,7 @@ mapbox_mcp = MCPServerStdio(
 
 Either way, the MCP server will automatically expose all available Mapbox tools ([see full tool list](./mapbox-mcp-intro.md#core-tools)) to any agent that includes this configuration.
 
-**For this tutorial, we'll use the local server** since it provides the best development experience and the code example is already configured for it. But feel free to swap in the hosted configuration—everything else works exactly the same!
+**For this tutorial, we'll use the local server** since it provides the best development experience and the code example is already configured for it. But feel free to swap in the hosted configuration. Everything else works exactly the same!
 
 ## Building a Multi-Agent Travel Planner
 
@@ -170,12 +228,12 @@ route_agent = Agent(
 **Key points:**
 - The `mcps` field gives each agent access to all Mapbox tools
 - The `backstory` hints at which tools to use, but agents discover and choose tools automatically
-- Both agents share the same `mapbox_mcp` configuration—no duplication needed
+- Both agents share the same `mapbox_mcp` configuration (no duplication needed)
 - `verbose=True` lets you see the agent's reasoning and tool calls
 
 ### Defining Tasks with Dependencies
 
-Tasks define what each agent should accomplish:
+Tasks define what you want each agent to do:
 
 ```python
 # Task 1: Geocode all the locations we want to visit
@@ -210,9 +268,9 @@ route_task = Task(
 ```
 
 **Key points:**
-- The `context` parameter creates a dependency—the Route Planner waits for the Location Specialist
+- The `context` parameter creates a dependency (the Route Planner waits for the Location Specialist)
 - `expected_output` helps agents understand what format you want
-- Natural language descriptions work best—be specific about what you need
+- Natural language descriptions work best. Be specific about what you need
 
 ### Running the Crew
 
@@ -237,7 +295,7 @@ print(result)
 
 ### What You'll See
 
-When you run this code, you'll observe:
+When you run this code, you'll see:
 
 1. The **Location Specialist** activating the `search_and_geocode_tool` for each attraction
 2. Structured output with precise coordinates
@@ -247,7 +305,7 @@ When you run this code, you'll observe:
    - Total distance and time
    - Turn-by-turn directions for each segment
 
-The agents collaborate automatically—no manual data passing required.
+The agents collaborate automatically. No manual data passing required.
 
 ## Complete Working Example
 
@@ -262,9 +320,12 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Verify Mapbox token
+# Verify required environment variables
 if not os.getenv("MAPBOX_ACCESS_TOKEN"):
     raise ValueError("MAPBOX_ACCESS_TOKEN not found. Set it in your .env file.")
+
+if not os.getenv("OPENAI_API_KEY"):
+    raise ValueError("OPENAI_API_KEY not found. Set it in your .env file.")
 
 # Configure the Mapbox MCP server
 mapbox_mcp = MCPServerStdio(
@@ -338,15 +399,30 @@ print(result)
 
 ### Running the Example
 
+**Using uv:**
+
 ```bash
 cd crewai
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 uv pip install -r requirements.txt
 
 # Create .env file with your tokens
 cp .env.example .env
-# Edit .env and add MAPBOX_ACCESS_TOKEN and OPENAI_API_KEY
+# Edit .env and add your keys
+
+python travel_planner.py
+```
+
+**Or using traditional venv + pip:**
+
+```bash
+cd crewai
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Create .env file with your tokens
+cp .env.example .env
+# Edit .env and add your keys
 
 python travel_planner.py
 ```
@@ -590,6 +666,12 @@ Use `verbose=True` during development to see:
 - Where they might be struggling
 
 ## Troubleshooting
+
+### LLM API Errors
+- Check your LLM API key is set: `echo $OPENAI_API_KEY`
+- Verify the key is valid in your [OpenAI dashboard](https://platform.openai.com/api-keys)
+- If using Anthropic, make sure `langchain-anthropic` is installed
+- Check for rate limits or billing issues in your LLM provider's dashboard
 
 ### MCP Server Not Starting
 - Ensure Node.js is installed: `node --version`

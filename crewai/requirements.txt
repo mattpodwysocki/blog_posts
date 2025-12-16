@@ -2,3 +2,6 @@ crewai>=0.80.0
 crewai-tools>=0.12.0
 python-dotenv>=1.0.0
 mcp>=1.0.0
+
+# Optional: Uncomment if using Anthropic instead of OpenAI
+# langchain-anthropic>=0.3.0

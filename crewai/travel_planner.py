@@ -14,10 +14,15 @@ from crewai.mcp import MCPServerStdio
 # Load environment variables from .env file
 load_dotenv()
 
-# Verify Mapbox token is set
+# Verify required environment variables are set
 if not os.getenv("MAPBOX_ACCESS_TOKEN"):
     raise ValueError(
         "MAPBOX_ACCESS_TOKEN not found. Please set it in your .env file or environment."
+    )
+
+if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
+    raise ValueError(
+        "LLM API key not found. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY in your .env file."
     )
 
 print("🗺️  Setting up Mapbox MCP server configuration...")

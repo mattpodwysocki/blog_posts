@@ -47,23 +47,24 @@ cd crewai
 
 ### 3. Install Dependencies
 
-Using uv to create a virtual environment and install dependencies:
+**Option 1: Using uv (modern, recommended)**
 
 ```bash
-# Create virtual environment
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
 # Install dependencies
 uv pip install -r requirements.txt
+
+# Optional: If using Anthropic, uncomment langchain-anthropic in requirements.txt first
 ```
 
-Alternatively, if you prefer using pip:
+**Option 2: Using venv + pip (traditional)**
 
 ```bash
+# Create virtual environment and install dependencies
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+# Optional: If using Anthropic, uncomment langchain-anthropic in requirements.txt first
 ```
 
 ### 4. Configure Environment Variables
@@ -217,6 +218,35 @@ See the [Hosted MCP Server Guide](https://github.com/mapbox/mcp-server) for conf
 
 ## Troubleshooting
 
+### LLM API Key Errors
+
+CrewAI requires an external LLM to power the agents. If you see errors about missing API keys:
+
+1. Make sure you've created a `.env` file (not just `.env.example`)
+2. Add at least one LLM API key to your `.env` file:
+
+```bash
+# For OpenAI (default, easiest)
+OPENAI_API_KEY=sk-...your_key_here
+
+# OR for Anthropic
+ANTHROPIC_API_KEY=sk-ant-...your_key_here
+```
+
+3. Verify the key is valid in your provider's dashboard:
+   - [OpenAI Dashboard](https://platform.openai.com/api-keys)
+   - [Anthropic Console](https://console.anthropic.com/)
+
+4. If using Anthropic, uncomment `langchain-anthropic` in `requirements.txt` and reinstall:
+
+```bash
+# With uv
+uv pip install -r requirements.txt
+
+# Or with pip
+pip install -r requirements.txt
+```
+
 ### "MAPBOX_ACCESS_TOKEN not found"
 
 Make sure you've:
@@ -226,33 +256,14 @@ Make sure you've:
 
 ### "MCP server failed to start"
 
-Ensure `uv` is installed and in your PATH:
+Ensure Node.js is installed and npx is available:
 
 ```bash
-uv --version
+node --version
+npx --version
 ```
 
-If not found, reinstall uv or try using `npx` instead:
-
-```python
-geocode_tool = MCPTool(
-    name="mapbox_geocode",
-    server_command="npx @mapbox/mcp-server-mapbox",
-    description="...",
-)
-```
-
-### "OpenAI API key not found" (or similar)
-
-CrewAI needs an LLM to run. Add one of these to your `.env`:
-
-```bash
-OPENAI_API_KEY=sk-...
-# OR
-ANTHROPIC_API_KEY=sk-ant-...
-# OR
-GROQ_API_KEY=gsk_...
-```
+If not installed, download from [nodejs.org](https://nodejs.org/)
 
 ### Rate Limiting
 
@@ -278,8 +289,9 @@ The Mapbox MCP server provides these tools:
 
 ## Learn More
 
-- [Blog Post](../mapbox-mcp-crewai.md) - Full tutorial and explanation
-- [Mapbox MCP Server](https://github.com/mapbox/mcp-server) - MCP server documentation
+- [Blog Post](../mapbox-mcp-crewai-updated.md) - Full tutorial and explanation
+- [Mapbox MCP Server Intro](../mapbox-mcp-intro.md) - Introduction to Mapbox MCP
+- [Mapbox MCP Server GitHub](https://github.com/mapbox/mcp-server) - MCP server documentation
 - [CrewAI Documentation](https://docs.crewai.com/) - Learn about multi-agent systems
 - [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
 
