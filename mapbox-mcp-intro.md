@@ -15,6 +15,9 @@ Instead of writing custom code to integrate with each API, you:
 
 MCP is supported by popular frameworks like CrewAI, LangGraph, Pydantic AI, and Mastra, as well as by AI assistants like Claude Desktop.
 
+![DC Tour Assistant Demo](./content/dc_demo.gif)
+*Example: An AI agent built with MCP can naturally handle location queries and display results visually*
+
 ## What Does the Mapbox MCP Server Provide?
 
 The Mapbox MCP Server exposes nine powerful geospatial tools that give your agents comprehensive location intelligence.

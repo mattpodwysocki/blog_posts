@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Hide Next.js development mode indicators that might overlap UI */
+#__next-build-watcher,
+.__next-error-overlay,
+.next-dev-overlay {
+  z-index: 999999 !important;
+}
+
+/* Ensure our UI elements are properly layered */
+form,
+input,
+button {
+  position: relative;
+  z-index: 1;
+}
